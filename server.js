@@ -16,9 +16,9 @@ server.bind(5000);
 
 var pingOptions = function () {
 	return {
-		//host: 'chronos.azurewebsites.net'
-		host: 'localhost'
-		, port: 3000
+		host: 'chronos.azurewebsites.net'
+		/*host: 'localhost'
+		, port: 3000*/
 		, path: '/ping?time=' + (new Date).getTime()
 		, method: 'GET'
 	};
@@ -34,6 +34,7 @@ function ping() {
 			var obj = JSON.parse(chunk)
 			latency = ((new Date).getTime() - obj.time) / 2;
 			timeDiff = (new Date).getTime() - (obj.myTime + latency);
+			console.log(timeDiff);
 		});
 		setTimeout(ping, 2000);
 	});
