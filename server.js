@@ -1,20 +1,48 @@
 var dgram = require('dgram')
 	, http = require('http')
 	, osc = require('omgosc')
+	, delay = 5000
 
 	var server = new osc.UdpReceiver(5000);
 	server.on('', function (msg) {
 		var col = msg.path.match(/\/color\/([0-9]+)/);
 		if (col && col.length > 1) {
 			console.log('New color: ' + col[1] + ' Fade: ' + msg.params[0]);
+			send('/color/' + col[1] + '/' + (currentTime() + delay) + '/' + msg.params[0],
+				'POST',
+				function (chunk) {
+					console.log(chunk);
+				},
+				function (err) {
+					console.log('Color set failed: ' + err.message);
+				});
 		}
 	});
 	server.on('/bar', function (msg) {
-		console.log('Current bar: ' + msg.params[0]);
+		var barT = 600 * 4
+			, bar = msg.params[0]
+			, start = currentTime() - (bar * barT)
+		console.log('Current bar: ' + bar);
+		send('/time/' + start,
+			'POST',
+			function (chunk) {
+				console.log(chunk);
+			},
+			function (err) {
+				console.log('Color set failed: ' + err.message);
+			});
 	});
 
 	server.on('/scene', function (msg) {
 		console.log('Current scene: ' + msg.params[0]);
+		send('/scene/' + msg.params[0] + '/' + (currentTime() + delay),
+			'POST',
+			function (chunk) {
+				console.log(chunk);
+			},
+			function (err) {
+				console.log('Color set failed: ' + err.message);
+			});
 	});
 
 /*var server = dgram.createSocket('udp4');
@@ -31,14 +59,30 @@ server.on('listening', function () {
 
 server.bind(5000);*/
 
+function send(path, method, success, error) {
+	var opt = {
+		host: 'chronos.azurewebsites.net',
+		/*host: 'localhost',
+		port: 3000,*/
+		path: path,
+		method: method
+	};
+	var req = http.request(opt, function (res) {
+		res.setEncoding('utf8');
+		res.on('data', success);
+	})
+	.on('error', error)
+	.end();
+}
+
 
 var pingOptions = function () {
 	return {
-		host: 'chronos.azurewebsites.net'
-		/*host: 'localhost'
-		, port: 3000*/
-		, path: '/ping?time=' + (new Date).getTime()
-		, method: 'GET'
+		host: 'chronos.azurewebsites.net',
+		/*host: 'localhost',
+		port: 3000,*/
+		path: '/ping?time=' + (new Date).getTime(),
+		method: 'GET'
 	};
 }
 
